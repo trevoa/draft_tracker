@@ -36,7 +36,7 @@ def get_players():
 sleeper_players = get_players()
 
 def tiers():
-    names_first = {player.get("search_full_name", None): ply_id for ply_id, player in sleeper_players.items()}
+    names_first = {player.get("search_full_name", None): ply_id for ply_id, player in sleeper_players.items() if player.get("team") is not None}
 
     ## Process Tier Input
     tier_split = "\s+Tier [0-9]*:\s+"
