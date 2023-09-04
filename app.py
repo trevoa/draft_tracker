@@ -7,8 +7,9 @@ import pandas as pd
 st.title("Sleeper Draft Tracker")
 
 # User Inputs
-draft_id = st.text_input("Sleeper Draft ID")
-tier_txt = st.text_area("Tier String")
+with st.sidebar:
+    draft_id = st.text_input("Sleeper Draft ID")
+    tier_txt = st.text_area("Tier String")
 
 # Utility functions
 def clean_player_name(name):
