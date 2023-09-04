@@ -4,12 +4,20 @@ import re
 import pandas as pd
 
 # Metadata
-st.title("Sleeper Draft Tracker")
+st.title(":football: Sleeper Draft Tracker")
 
 # User Inputs
 with st.sidebar:
     draft_id = st.text_input("Sleeper Draft ID")
     tier_txt = st.text_area("Tier String")
+
+draft_status = requests.get(f"https://api.sleeper.app/v1/draft/{draft_id}/picks").json()
+col1, col2 = st.columns(2)
+with col1:
+    st.metric(label=":clock1: Round", value=draft_status[-1]["round"])
+with col2:
+    st.metric(label=":hourglass: Pick", value=int(draft_status[-1]["pick_no"])+1)
+
 
 # Utility functions
 def clean_player_name(name):
@@ -36,8 +44,9 @@ def get_players():
 
 sleeper_players = get_players()
 
+positions = ["QB", "RB", "WR", "K", "TE", ]
 def tiers():
-    names_first = {player.get("search_full_name", None): ply_id for ply_id, player in sleeper_players.items() if player.get("team") is not None}
+    names_first = {player.get("search_full_name", None): ply_id for ply_id, player in sleeper_players.items() if player.get("team") is not None and player.get("position") in positions}
 
     ## Process Tier Input
     tier_split = "\s+Tier [0-9]*:\s+"
@@ -47,7 +56,7 @@ def tiers():
     tier_labels = []
     tier_players = []
     for i, tierlist in enumerate(split_tiers, start=1):
-        tier_labels.append(f"tier{i}")
+        tier_labels.append(f"Tier {i}")
         tier_players.append([int(names_first.get(clean_player_name(player))) for player in re.split(',', tierlist) if names_first.get(clean_player_name(player)) is not None])
         
         # Update drafted players
@@ -72,12 +81,7 @@ for tier, players in tier_data.items():
     for player in players:
         tier_data2[sleeper_players.get(str(player))["full_name"]] = sleeper_players.get(str(player))
     cur_dataframe = pd.DataFrame.from_dict(tier_data2, orient='index')
-    try:
+    if not cur_dataframe.empty:
+        st.divider()
         st.subheader(tier)
-        st.dataframe(cur_dataframe[["position", "team", "injury_status"]])
-    except:
-        pass
-    
-
-
-
+        st.dataframe(cur_dataframe[["position", "team", "injury_status"]], use_container_width=True)
