@@ -18,6 +18,7 @@ with col1:
 with col2:
     st.metric(label=":hourglass: Pick", value=int(draft_status[-1]["pick_no"])+1)
 
+st.button("Update", on_click=st.experimental_rerun)
 
 # Utility functions
 def clean_player_name(name):
@@ -84,4 +85,4 @@ for tier, players in tier_data.items():
     if not cur_dataframe.empty:
         st.divider()
         st.subheader(tier)
-        st.dataframe(cur_dataframe[["position", "team", "injury_status"]], use_container_width=True)
+        st.dataframe(cur_dataframe[["position", "team", "age", "injury_status"]], use_container_width=True)
