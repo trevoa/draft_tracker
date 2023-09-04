@@ -10,11 +10,7 @@ st.title("Sleeper Draft Tracker")
 draft_id = st.text_input("Sleeper Draft ID")
 tier_txt = st.text_area("Tier String")
 
-# Get Sleeper Players
-@st.cache_data
-def get_players():
-    return requests.get("https://api.sleeper.app/v1/players/nfl").json()
-
+# Utility functions
 def clean_player_name(name):
     pass1 = name.strip().lower()
     splitname = pass1.split()
@@ -32,6 +28,13 @@ def find_player_id(name: str, data: dict):
     except:
         return None
 
+# Update data
+@st.cache_data
+def get_players():
+    return requests.get("https://api.sleeper.app/v1/players/nfl").json()
+
+sleeper_players = get_players()
+
 def tiers():
     names_first = {player.get("search_full_name", None): ply_id for ply_id, player in sleeper_players.items()}
 
@@ -45,25 +48,34 @@ def tiers():
     for i, tierlist in enumerate(split_tiers, start=1):
         tier_labels.append(f"tier{i}")
         tier_players.append([int(names_first.get(clean_player_name(player))) for player in re.split(',', tierlist) if names_first.get(clean_player_name(player)) is not None])
+        
+        # Update drafted players
+        draft_data = requests.get(f"https://api.sleeper.app/v1/draft/{draft_id}/picks").json()
+        drafted_players = [player["player_id"] for player in draft_data]
+
+        # strip drafted players
+        for tier in tier_players:
+            for player in tier:
+                # print(player)
+                # print(drafted_players)
+                if str(player) in drafted_players:
+                    tier.remove(player)
 
     return dict(zip(tier_labels, tier_players))
 
-sleeper_players = get_players()
-tier_players = tiers()
-
-# Update drafted players
-draft_data = requests.get(f"https://api.sleeper.app/v1/draft/{draft_id}/picks").json()
-drafted_players = [player["player_id"] for player in draft_data]
+tier_data = tiers()
 
 # Print Tiers
-for tier, players in tier_players.items():
-    tier_players = {}
+for tier, players in tier_data.items():
+    tier_data2 = {}
     for player in players:
-        tier_players[sleeper_players.get(str(player))["full_name"]] = sleeper_players.get(str(player))
-    print(tier_players)
-    cur_dataframe = pd.DataFrame.from_dict(tier_players, orient='index')
-    st.subheader(tier)
-    st.dataframe(cur_dataframe[["position", "team", "injury_status"]])
+        tier_data2[sleeper_players.get(str(player))["full_name"]] = sleeper_players.get(str(player))
+    cur_dataframe = pd.DataFrame.from_dict(tier_data2, orient='index')
+    try:
+        st.subheader(tier)
+        st.dataframe(cur_dataframe[["position", "team", "injury_status"]])
+    except:
+        pass
     
 
 
